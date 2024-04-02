@@ -44,32 +44,31 @@
 <body>
 
 <script type="module">
-    const architecture = await getArchitecture()
+
+    // Get from navigator.userAgentData if available
+    let { architecture } = navigator.userAgentData?.getHighEntropyValues
+        ? await navigator.userAgentData.getHighEntropyValues(['architecture'])
+        : ''
+
+    // Get from webGL context if detection failed
+    if (! architecture) {
+        const webglContext = document.createElement('canvas').getContext('webgl')
+        const webglDebugRendererInfo = webglContext.getExtension('WEBGL_debug_renderer_info')
+        console.log(webglContext)
+        architecture = webglContext?.getParameter(webglDebugRendererInfo?.UNMASKED_RENDERER_WEBGL)?.match(/apple/i)
+            ? 'arm'
+            : ''
+    }
+
+    // Get from navigator.userAgent if previous detections failed
+    if (! architecture) {
+       architecture = navigator.userAgent.match(/x86_64/) ? 'x64' : 'amd64'
+    }
+
     const os = navigator.platform.match(/(mac|win|linux)/i)?.[1]?.toLowerCase() || 'win'
 
     document.documentElement.classList.add(`platform-${os}`, `arch-${architecture}`)
 
-    async function getArchitecture() {
-        // Get from navigator.userAgentData if available
-        let { architecture } = navigator.userAgentData?.getHighEntropyValues
-            ? await navigator.userAgentData.getHighEntropyValues(['architecture'])
-            : null
-
-        // Get from webGL context if detection failed
-        if (! architecture) {
-            const webGlContext = document.createElement('canvas').getContext('webgl')
-            architecture = webGlContext?.getParameter(webGlContext?.UNMASKED_RENDERER_WEBGL)?.match(/apple/i)
-                ? 'arm'
-                : null
-        }
-
-        // Get from navigator.userAgent if previous detections failed
-        if (! architecture) {
-            architecture = navigator.userAgent.match(/x86_64/) ? 'x64' : 'amd64'
-        }
-
-        return architecture
-    }
 </script>
 
 <div class="d-flex flex-column align-items-center my-3">
